@@ -29,7 +29,7 @@ def money_area(img):
     mask = cv2.bitwise_and(mask_white_light_red, cv2.bitwise_not(mask_excluded))
     kernel = np.ones((5,5),np.uint8)
     # mask=cv2.dilate(mask,kernel,iterations=2)
-    mask=cv2.morphologyEx(mask,cv2.MORPH_CLOSE,kernel,iterations=8)
+    mask=cv2.morphologyEx(mask,cv2.MORPH_CLOSE,kernel,iterations=20)
     mask1=cv2.bitwise_and(img_copy, img_copy, mask=mask)
     # cv2.imshow('mask',mask)
 
@@ -43,11 +43,6 @@ def money_area(img):
     peri=cv2.arcLength(contours_sort, True)
     approx=cv2.approxPolyDP(contours_sort,peri*0.015,True)
     hull = cv2.convexHull(approx)
-
-    cv2.drawContours(img, [hull], -1, (0, 255, 0), 2)
-    epsilon=cv2.arcLength(hull,True)
-    approx=cv2.approxPolyDP(hull,0.02*epsilon,True)
-    # cv2.drawContours(img_copy, [approx], -1, (0, 255, 0), 2)
     # cv2.imshow('contours',img_copy)
     # print(approx)
     area=cv2.contourArea(hull)
@@ -86,13 +81,14 @@ def circle_area(img):
     mask_b=cv2.inRange(img_hsv,lower_blue,upper_blue)
     img=cv2.bitwise_and(img,img,mask=mask_b)
     cv2.imshow('img',mask_b)
-    contour=cv2.findContours(mask_b,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)[0]
-    contour_sort=sorted(contour,key=cv2.contourArea,reverse=True)[0]
-    cv2.drawContours(img,contour,0,(0,0,255),3)
-    # cv2.imshow('img',img)
-    points=np.array(contour_sort,np.float32)
-    points=points.reshape((-1,1,2))
-    area=cv2.contourArea(points)
+    contour = cv2.findContours(mask_b, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)[0]
+    c_contour_sort = sorted(contour, key=cv2.contourArea, reverse=True)[0]
+    # print(c_contour_sort)
+    # cv2.drawContours(img, c_contour_sort, -1, (0, 0, 255), 3)
+    # cv2.imshow('img_c',img_c)
+    points = np.array(c_contour_sort, np.float32)
+    points = points.reshape((-1, 1, 2))
+    area = cv2.contourArea(points)
     # print(area)
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
@@ -103,16 +99,18 @@ rect_out = []
 cir_out  = []
 w=156
 h=76
-s=156*76
+s=w*h
 for filename in os.listdir(folder_path):
     file_path = os.path.join(folder_path, filename)
     if os.path.isfile(file_path):
         input_img = cv2.imread(file_path)
-        m_area = money_area(input_img)
-        s_area = square_area(input_img)
-        c_area = circle_area(input_img)
-        rate= m_area/s
-        true_square=s_area*s/m_area
+        m_area = int(money_area(input_img))
+        # print("money",m_area)
+        s_area = int(square_area(input_img))
+        # print("square",s_area)
+        c_area = int(circle_area(input_img))
+        true_square=s_area/m_area*s
+        print(true_square)
         l=math.sqrt(true_square)
         true_circle=c_area*s/m_area
         d=math.sqrt(true_circle/math.pi)*2
